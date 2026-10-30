@@ -23,11 +23,11 @@ To use `meta-llama/Llama-3.2-3B-Instruct`, request access through your
 Hugging Face account:
 
 1. Sign in and open
-  [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct).
+   [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct).
 2. Fill in the "LLAMA 3.2 COMMUNITY LICENSE AGREEMENT" form on the model card
-  and submit it. Requests are reviewed by Meta, usually within a few hours.
+   and submit it. Requests are reviewed by Meta, usually within a few hours.
 3. Once the card shows you have been granted access, create a token with `read`
-  permission at
+   permission at
    [Settings → Access Tokens](https://huggingface.co/settings/tokens).
 
 Export that token before training; `scripts/train.sh` uses it to warm the
@@ -38,11 +38,9 @@ export HF_TOKEN=hf_...
 cd real_world_llm_experiments
 ```
 
-
-
 ### Train
 
-To train all configurations for a model family, pass `qwen` or `llama` to
+To train all three configurations for a model family, pass `qwen` or `llama` to
 `./scripts/run_all_training.sh`:
 
 ```bash
@@ -55,22 +53,16 @@ below to `./scripts/train.sh`. For example:
 
 ```bash
 ./scripts/train.sh configs/qwen-15-uniform.yaml
-./scripts/train.sh configs/qwen-13-15-uniform.yaml
-./scripts/train.sh configs/qwen-5-10-15-uniform.yaml
 ```
 
-
-| Config                              | Model                 | Nodes | Training distribution                      |
-| ----------------------------------- | --------------------- | ----- | ------------------------------------------ |
-| `configs/qwen-10-uniform.yaml`      | Qwen2.5-3B-Instruct   | 10    | 10-uniform                                 |
-| `configs/qwen-15-uniform.yaml`      | Qwen2.5-3B-Instruct   | 15    | 15-uniform                                 |
-| `configs/qwen-15-hard.yaml`         | Qwen2.5-3B-Instruct   | 15    | 15-hard                                    |
-| `configs/qwen-13-15-uniform.yaml`   | Qwen2.5-3B-Instruct   | 15    | Uniform over ancestor depths 13–15         |
-| `configs/qwen-5-10-15-uniform.yaml` | Qwen2.5-3B-Instruct   | 15    | Uniform over ancestor depths 5, 10, and 15 |
-| `configs/llama-10-uniform.yaml`     | Llama-3.2-3B-Instruct | 10    | 10-uniform                                 |
-| `configs/llama-15-uniform.yaml`     | Llama-3.2-3B-Instruct | 15    | 15-uniform                                 |
-| `configs/llama-15-hard.yaml`        | Llama-3.2-3B-Instruct | 15    | 15-hard                                    |
-
+| Config | Model | Nodes | Training distribution |
+| --- | --- | --- | --- |
+| `configs/qwen-10-uniform.yaml` | Qwen2.5-3B-Instruct | 10 | 10-uniform |
+| `configs/qwen-15-uniform.yaml` | Qwen2.5-3B-Instruct | 15 | 15-uniform |
+| `configs/qwen-15-hard.yaml` | Qwen2.5-3B-Instruct | 15 | 15-hard |
+| `configs/llama-10-uniform.yaml` | Llama-3.2-3B-Instruct | 10 | 10-uniform |
+| `configs/llama-15-uniform.yaml` | Llama-3.2-3B-Instruct | 15 | 15-uniform |
+| `configs/llama-15-hard.yaml` | Llama-3.2-3B-Instruct | 15 | 15-hard |
 
 Checkpoints go to `runs/<config-name>/`, sampled generations to
 `completion_samples/completion_samples_dag_<timestamp>.txt`, console output to
@@ -79,8 +71,8 @@ Checkpoints go to `runs/<config-name>/`, sampled generations to
 
 ### Evaluate
 
-To evaluate a model family, pass `qwen` or `llama` to
-`./scripts/run_eval_matrix.sh`. This evaluates every checkpoint against every
+To evaluate these configurations, pass `qwen` or `llama` to
+`./scripts/run_eval_matrix.sh`. This evaluates each checkpoint against every
 test distribution, using 1000 greedy samples per cell:
 
 ```bash
@@ -90,20 +82,7 @@ test distribution, using 1000 greedy samples per cell:
 
 Results go to `evaluation_results/<family>_matrix_<timestamp>/`.
 
-Evaluate the two additional Qwen checkpoints on 15-hard without adding them to
-the matrix:
-
-```bash
-./scripts/run_eval_depth_variants.sh
-```
-
-These results go to
-`evaluation_results/qwen_depth_variants_<timestamp>/`.
-
 ### Plot
-
-The plotting wrapper accepts any pair of completion-sample logs. For the
-15-Uniform versus 15-Hard comparison:
 
 ```bash
 ./scripts/plot_uniform_vs_hard.sh \
@@ -112,17 +91,42 @@ The plotting wrapper accepts any pair of completion-sample logs. For the
     figures/uniform_vs_hard.png
 ```
 
-To compare the two additional ancestor-depth distributions on maximal-depth
-examples:
+### Ablation: effect of training-data diversity
+
+Compare two uniform mixtures of three ancestor-depth levels using
+Qwen2.5-3B-Instruct. Both use 15-node graphs and the same 800-step training budget.
+
+| Config | Ancestor depths |
+| --- | --- |
+| `configs/qwen-5-10-15-uniform.yaml` | 5, 10, 15 |
+| `configs/qwen-13-15-uniform.yaml` | 13, 14, 15 |
+
+From `real_world_llm_experiments/`, pass either configuration from the table
+above to `./scripts/train.sh`:
+
+```bash
+./scripts/train.sh configs/qwen-5-10-15-uniform.yaml
+./scripts/train.sh configs/qwen-13-15-uniform.yaml
+```
+
+Evaluate both checkpoints on `15-hard` with 1000 greedy samples each:
+
+```bash
+./scripts/run_eval_depth_variants.sh
+```
+
+Results go to `evaluation_results/qwen_depth_variants_<timestamp>/`.
+
+To plot training-time accuracy on maximal-depth examples:
 
 ```bash
 DEPTH=14 \
-LABEL1="13-15-Uniform" \
-LABEL2="5-10-15-Uniform" \
+LABEL1="5-10-15-Uniform" \
+LABEL2="13-15-Uniform" \
 ./scripts/plot_uniform_vs_hard.sh \
-    completion_samples/completion_samples_dag_<13-15-uniform_ts>.txt \
     completion_samples/completion_samples_dag_<5-10-15-uniform_ts>.txt \
-    figures/13-15-uniform_vs_5-10-15-uniform.png
+    completion_samples/completion_samples_dag_<13-15-uniform_ts>.txt \
+    figures/5-10-15-uniform_vs_13-15-uniform.png
 ```
 
 The configs measure ancestor depth in nodes, while `DEPTH` measures it in
@@ -164,13 +168,11 @@ to `./run.sh`. For example:
 ./run.sh uniform-op10-20
 ```
 
-
-| Experiment        | Operation counts | Training rows |
-| ----------------- | ---------------- | ------------- |
-| `hard-op20`       | 20               | 500,000       |
-| `uniform-op10-17` | 10-17            | 400,000       |
-| `uniform-op10-20` | 10-20            | 550,000       |
-
+| Experiment | Operation counts | Training rows |
+| --- | --- | --- |
+| `hard-op20` | 20 | 500,000 |
+| `uniform-op10-17` | 10-17 | 400,000 |
+| `uniform-op10-20` | 10-20 | 550,000 |
 
 Logs go to `logs/` and checkpoints to `checkpoints/<experiment>/`. The launcher
 refuses a nonempty checkpoint directory unless you pass `ALLOW_EXISTING=1`.
@@ -230,8 +232,6 @@ Results go to `result/theoretically_inspired/<script>_linear/` for `--linear`
 and `result/theoretically_inspired/<script>/` for `--softmax`.
 
 ---
-
-
 
 ## Credits
 
