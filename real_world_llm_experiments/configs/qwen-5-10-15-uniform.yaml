@@ -1,0 +1,71 @@
+model_name_or_path: Qwen/Qwen2.5-3B-Instruct
+model_revision: main
+dtype: bfloat16
+attn_implementation: flash_attention_2
+bf16: true
+tf32: true
+output_dir: runs/qwen-5-10-15-uniform
+
+dataset_samples: 80000
+graph_type: dag
+write_samples_probability: 1
+min_nodes: 15
+max_nodes: 15
+sampling_strategy: uniform_size
+max_label_value: 15
+fixed_label_set: false
+min_start_value: 0
+max_start_value: 1
+
+max_in_degree: 2
+edge_probability: 0.2
+
+max_degree: 1
+max_coefficient: 1
+max_terms: 2
+terms_equal_in_degree: false
+probabilistic_pairwise_terms: true
+single_variable_term_probability: 1
+pairwise_product_term_probability: 0
+constant_term_probability: 0.6666
+min_constant: 0
+max_constant: 1
+
+target_sink_only: true
+max_value: 5000
+modulus: 2
+
+ancestor_depths: [5, 10, 15]
+
+max_prompt_length: 512
+
+num_train_epochs: 1
+max_steps: 800
+per_device_train_batch_size: 8
+gradient_accumulation_steps: 8
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+learning_rate: 5.0e-7
+lr_scheduler_type: cosine
+warmup_ratio: 0.03
+
+beta: 0.0001
+max_completion_length: 1024
+num_generations: 8
+use_vllm: true
+
+vllm_mode: colocate
+vllm_gpu_memory_utilization: 0.25
+vllm_max_model_length: 2048
+
+logging_strategy: steps
+logging_steps: 2000
+report_to:
+  - tensorboard
+save_strategy: steps
+save_steps: 2000
+seed: 42
+
+push_to_hub: false
+hub_strategy: every_save
