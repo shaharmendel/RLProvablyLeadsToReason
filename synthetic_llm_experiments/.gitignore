@@ -1,8 +1,10 @@
 /.runtime/
 /data/
+/derived_data/
 /models/
 /cache/
 /checkpoints/
+/evaluation/
 /logs/
 /smoke/
 /wandb/

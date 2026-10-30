@@ -1,0 +1,17 @@
+# Four equally weighted levels; the Hard20 fraction is one quarter.
+defaults:
+  - base
+  - _self_
+data:
+  train_files:
+    - new_version/derived_data/appendix-1024/four/op17-102299.jsonl
+    - new_version/derived_data/appendix-1024/four/op18-102299.jsonl
+    - new_version/derived_data/appendix-1024/four/op19-102299.jsonl
+    - new_version/derived_data/appendix-1024/four/op20-102299.jsonl
+  val_files:
+    - new_version/data/composition/val/op20-200.jsonl
+trainer:
+  experiment_name: appendix-op17-18-19-20
+hydra:
+  searchpath:
+    - file://verl/trainer/config

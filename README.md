@@ -1,18 +1,14 @@
 Code for reproducing the experiments in the paper "Outcome-Based RL Provably Leads Transformers to Reason, but Only With the Right Data".
 
-## Environments
+Each setting uses its own environment. Start its setup commands from the repository root.
 
-Three sets of experiments, three conda environments. Create the ones you need.
+## 1. Real-world pre-training experiments
 
-```bash
-# 1. Theoretically analysed experiments
-conda create -n trans_rl python=3.9.23
-conda activate trans_rl
-pip install -r requirements.txt
-```
+### Environment
+
+To set up the environment, run the following commands from the repository root:
 
 ```bash
-# 2. Real-world LLM experiments
 conda create -n real_world_llm python=3.11
 conda activate real_world_llm
 pip install torch==2.10.0
@@ -20,47 +16,11 @@ pip install numpy==2.2.6 psutil packaging ninja
 pip install -r requirements_real_world_llm.txt --no-build-isolation
 ```
 
-```bash
-# 3. Synthetic LLM experiments
-cd synthetic_llm_experiments
-./bootstrap.sh
-./scripts/setup_env.sh
-conda activate interplay-rl
-```
+Run from `real_world_llm_experiments/` in `real_world_llm`.
 
----
-
-## 1. Theoretically analysed experiments
-
-Run from the repository root in `trans_rl`. Each script accepts `--linear`
-(default) or `--softmax`.
-
-Run one experiment at a time:
-
-```bash
-# Emergence of efficient reasoning
-python theoretically_inspired/exp_train_on_D.py --linear
-
-# Out-of-distribution generalization
-python theoretically_inspired/exp_train_on_D_m.py --linear
-
-# Complex tasks require simple tasks
-python theoretically_inspired/exp_vanish_grad.py --linear
-```
-
-Results go to `result/theoretically_inspired/<script>_linear/` for `--linear`
-and `result/theoretically_inspired/<script>/` for `--softmax`.
-
----
-
-## 2. Real-world LLM experiments
-
-Needs 8 GPUs with at least 48GB each. Run from `real_world_llm_experiments/` in
-`real_world_llm`.
-
-`Qwen/Qwen2.5-3B-Instruct` downloads without credentials, but
-`meta-llama/Llama-3.2-3B-Instruct` is gated, so the `llama` runs need an
-approved Hugging Face account:
+`Qwen/Qwen2.5-3B-Instruct` is publicly accessible on Hugging Face.
+To use `meta-llama/Llama-3.2-3B-Instruct`, request access through your
+Hugging Face account:
 
 1. Sign in and open
    [meta-llama/Llama-3.2-3B-Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct).
@@ -80,14 +40,16 @@ cd real_world_llm_experiments
 
 ### Train
 
-All configs of one model family, sequentially:
+To train all configurations for a model family, pass `qwen` or `llama` to
+`./scripts/run_all_training.sh`:
 
 ```bash
 ./scripts/run_all_training.sh qwen
 ./scripts/run_all_training.sh llama
 ```
 
-Or one config at a time:
+To train a specific configuration, pass any configuration file from the table
+below to `./scripts/train.sh`. For example:
 
 ```bash
 ./scripts/train.sh configs/qwen-15-uniform.yaml
@@ -109,7 +71,9 @@ Checkpoints go to `runs/<config-name>/`, sampled generations to
 
 ### Evaluate
 
-Every checkpoint against every test distribution, 1000 greedy samples per cell:
+To evaluate a model family, pass `qwen` or `llama` to
+`./scripts/run_eval_matrix.sh`. This evaluates every checkpoint against every
+test distribution, using 1000 greedy samples per cell:
 
 ```bash
 ./scripts/run_eval_matrix.sh qwen
@@ -129,23 +93,35 @@ Results go to `evaluation_results/<family>_matrix_<timestamp>/`.
 
 ---
 
-## 3. Synthetic LLM experiments
+## 2. Synthetic pre-training experiments
 
-Needs Linux x86_64, 4 GPUs, an NVIDIA driver compatible with CUDA 12.6, and 35GB
-of free disk. Run from `synthetic_llm_experiments/` in `interplay-rl`.
+### Environment
+
+To set up the environment, run the following commands from the repository root:
+
+```bash
+cd synthetic_llm_experiments
+./bootstrap.sh
+./scripts/setup_env.sh
+conda activate interplay-rl
+```
+
+Run from `synthetic_llm_experiments/` in `interplay-rl`.
 
 Download the pinned dataset and model, build the training files, and
 authenticate to the WandB project `composition-10B-op-RL`:
 
 ```bash
-cd synthetic_llm_experiments
 HF_BIN="$(command -v hf)" ./scripts/download_assets.sh
 ./scripts/build_datasets.sh
 wandb login
 ./scripts/test.sh
 ```
 
-Run one experiment at a time:
+### Run
+
+To run a specific experiment, pass any experiment name from the table below
+to `./run.sh`. For example:
 
 ```bash
 ./run.sh uniform-op10-20
@@ -157,20 +133,73 @@ Run one experiment at a time:
 | `uniform-op10-17` | 10-17 | 400,000 |
 | `uniform-op10-20` | 10-20 | 550,000 |
 
-Logs go to `logs/` and checkpoints to `checkpoints/<experiment>/`. GPUs 0-3 are
-used by default; override with `CUDA_VISIBLE_DEVICES=0,2,4,6`. The launcher
+Logs go to `logs/` and checkpoints to `checkpoints/<experiment>/`. The launcher
 refuses a nonempty checkpoint directory unless you pass `ALLOW_EXISTING=1`.
+
+### Ablation: effect of training-data diversity
+
+Compare two equally weighted mixtures of four operation counts. Both use
+409,196 training examples, the same operation-20 training examples (one quarter of
+the data), and 200 training steps.
+
+| Experiment | Operation counts |
+| --- | --- |
+| `appendix-op10-13-17-20` | 10, 13, 17, 20 |
+| `appendix-op17-18-19-20` | 17, 18, 19, 20 |
+
+From `synthetic_llm_experiments/`, prepare the balanced data, then pass either
+experiment name from the table above to `./run.sh`:
+
+```bash
+python scripts/prepare_diversity_data.py
+./run.sh appendix-op10-13-17-20
+./run.sh appendix-op17-18-19-20
+```
+
+---
+
+## 3. Theoretical setting
+
+### Environment
+
+To set up the environment, run the following commands from the repository root:
+
+```bash
+conda create -n trans_rl python=3.9.23
+conda activate trans_rl
+pip install -r requirements.txt
+```
+
+### Run
+
+From the repository root in `trans_rl`, run the script for the experiment you
+want. The examples below use `--linear` (the default); replace it with
+`--softmax` to use softmax attention:
+
+```bash
+# Emergence of efficient reasoning
+python theoretically_inspired/exp_train_on_D.py --linear
+
+# Out-of-distribution generalization
+python theoretically_inspired/exp_train_on_D_m.py --linear
+
+# Complex tasks require simple tasks
+python theoretically_inspired/exp_vanish_grad.py --linear
+```
+
+Results go to `result/theoretically_inspired/<script>_linear/` for `--linear`
+and `result/theoretically_inspired/<script>/` for `--softmax`.
 
 ---
 
 ## Credits
 
-The real-world LLM experiments started from Phil Schmid's
+The real-world pre-training experiments started from Phil Schmid's
 [Mini-R1: Reproduce Deepseek R1 "aha moment"](https://github.com/philschmid/deep-learning-pytorch-huggingface/blob/main/training/mini-deepseek-r1-aha-grpo.ipynb)
 tutorial and the
 [`run_r1_grpo.py`](https://github.com/philschmid/deep-learning-pytorch-huggingface/blob/main/training/scripts/run_r1_grpo.py)
 script it ships.
-The synthetic LLM experiments build on
+The synthetic pre-training experiments build on
 [Interplay-LM-Reasoning](https://github.com/Interplay-LM-Reasoning/Interplay-LM-Reasoning).
 `bootstrap.sh` checks out revision `40b9d29`, and the runs use their
 [composition](https://huggingface.co/datasets/Interplay-LM-Reasoning/composition)

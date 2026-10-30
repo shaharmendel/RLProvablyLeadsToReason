@@ -8,10 +8,13 @@ EXPERIMENTS=(
   hard-op20
   uniform-op10-17
   uniform-op10-20
+  appendix-op10-13-17-20
+  appendix-op17-18-19-20
 )
 
 bash -n "$BUNDLE/bootstrap.sh" "$BUNDLE/run.sh" "$BUNDLE/scripts/"*.sh
 "$PYTHON_BIN" -m py_compile "$BUNDLE/scripts/"*.py
+"$PYTHON_BIN" "$BUNDLE/scripts/test_prepare_diversity_data.py"
 RUNTIME_DIR="$RUNTIME" "$PYTHON_BIN" "$BUNDLE/scripts/validate.py" "$@"
 
 for experiment in "${EXPERIMENTS[@]}"; do

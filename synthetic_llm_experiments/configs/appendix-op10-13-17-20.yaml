@@ -1,0 +1,17 @@
+# Matched four-level comparison: same row count and one-quarter Hard20 mass.
+defaults:
+  - base
+  - _self_
+data:
+  train_files:
+    - new_version/derived_data/appendix-1024/four/op10-102299.jsonl
+    - new_version/derived_data/appendix-1024/four/op13-102299.jsonl
+    - new_version/derived_data/appendix-1024/four/op17-102299.jsonl
+    - new_version/derived_data/appendix-1024/four/op20-102299.jsonl
+  val_files:
+    - new_version/data/composition/val/op20-200.jsonl
+trainer:
+  experiment_name: appendix-op10-13-17-20
+hydra:
+  searchpath:
+    - file://verl/trainer/config

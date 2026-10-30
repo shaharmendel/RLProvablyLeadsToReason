@@ -7,6 +7,8 @@ EXPERIMENTS=(
   hard-op20
   uniform-op10-17
   uniform-op10-20
+  appendix-op10-13-17-20
+  appendix-op17-18-19-20
 )
 
 usage() {
@@ -41,6 +43,13 @@ export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0,1,2,3}"
 export HF_HUB_ENABLE_HF_TRANSFER="${HF_HUB_ENABLE_HF_TRANSFER:-1}"
 export NCCL_P2P_DISABLE="${NCCL_P2P_DISABLE:-1}"
 export NCCL_IB_DISABLE="${NCCL_IB_DISABLE:-1}"
+
+# Keep the configured six rollouts per prompt in the matched ablation.
+case "$NAME" in
+  appendix-op10-13-17-20|appendix-op17-18-19-20)
+    export META_RUN_AUTO_GPU_ADJUST=0
+    ;;
+esac
 
 CONFIG="$BUNDLE/configs/$NAME.yaml"
 EXPERIMENT_NAME="$NAME"
